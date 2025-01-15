@@ -36,6 +36,7 @@ jobs:
     
       - name: Building a Docker image
         run: |
+          cd ${{ matrix.service }}
           docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/${{ matrix.service }}:$IMAGE_TAG .
     
       - name: Pushing a Docker image to ECR
