@@ -18,12 +18,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Configure AWS CLI region
+        run: |
+          aws configure set region eu-north-1  
     
       - name: Вхід в AWS ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-        with:
-          region: eu-north-1
     
       - name: Tag specification for Docker image
         run: |
