@@ -54,7 +54,7 @@ jobs:
       - name: Upgrade files to S3 (frontend only)
         if: matrix.service == 'frontend'
         run: |
-          aws s3 cp frontend/index.html s3://demo-bucket-website-2025/ --acl public-read
+          aws s3 cp /home/ubuntu/GAME/frontend/index.html s3://demo-bucket-website-2025/ --acl public-read
 
       - name: CloudFront cache disability (frontend only)
         if: matrix.service == 'frontend'
