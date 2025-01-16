@@ -54,7 +54,7 @@ jobs:
       - name: Upgrade files to S3 (frontend only)
         if: matrix.service == 'frontend'
         run: |
-          aws s3 cp /home/ubuntu/GAME/frontend/index.html s3://demo-bucket-website-2025/ --acl public-read
+          aws s3 cp /home/ubuntu/GAME/frontend/index.html s3://demo-bucket-website-2025/ 
 
       - name: CloudFront cache disability (frontend only)
         if: matrix.service == 'frontend'
@@ -75,7 +75,7 @@ jobs:
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
 
       - name: Connect to EC2 and update containers
-        uses: appleboy/ssh-action@v0.1.7
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ env.EC2_PUBLIC_IP }}
           username: ${{ secrets.EC2_USER }}
@@ -86,4 +86,5 @@ jobs:
             IMAGE_TAG=${{ env.IMAGE_TAG }} docker-compose pull ${{ matrix.service }}
             IMAGE_TAG=${{ env.IMAGE_TAG }} docker-compose up -d ${{ matrix.service }}
             docker image prune -f  # Delete old unnecessary images
+
 
