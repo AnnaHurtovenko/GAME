@@ -64,10 +64,20 @@ jobs:
       - name: Set image tag for Docker Compose
         run: echo "IMAGE_TAG=${{ env.IMAGE_TAG }}" >> $GITHUB_ENV
 
+      - name: Get EC2 public IP
+        id: ec2_ip
+        run: |
+          EC2_INSTANCE_ID=${{ secrets.EC2_INSTANCE_ID }}
+          EC2_PUBLIC_IP=$(aws ec2 describe-instances \
+            --instance-id $EC2_INSTANCE_ID \
+            --query "Reservations[0].Instances[0].PublicIpAddress" \
+            --output text)
+          echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
+
       - name: Connect to EC2 and update containers
         uses: appleboy/ssh-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ env.EC2_PUBLIC_IP }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
@@ -76,3 +86,4 @@ jobs:
             IMAGE_TAG=${{ env.IMAGE_TAG }} docker-compose pull ${{ matrix.service }}
             IMAGE_TAG=${{ env.IMAGE_TAG }} docker-compose up -d ${{ matrix.service }}
             docker image prune -f  # Delete old unnecessary images
+
