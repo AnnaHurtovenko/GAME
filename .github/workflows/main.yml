@@ -64,7 +64,7 @@ jobs:
       - name: Upgrade files to S3 (frontend only)
         if: matrix.service == 'frontend'
         run: |
-          aws s3 sync ./frontend s3://demo-bucket-website-2025/ --delete 
+          aws s3 sync ./frontend s3://demo-bucket-website-2025/ --delete --debug
 
       - name: CloudFront cache disability (frontend only)
         if: matrix.service == 'frontend'
