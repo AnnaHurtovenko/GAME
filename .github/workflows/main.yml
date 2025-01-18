@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [frontend, backend_redis, backend_rds]  
+        service: [frontend, backend-redis, backend-rds]  
     
     steps:
       - name: Checkout repository
@@ -48,7 +48,7 @@ jobs:
     needs: build-and-push  
     strategy:
       matrix:
-        service: [frontend, backend_redis, backend_rds]
+        service: [frontend, backend-redis, backend-rds]
 
     steps:
       - name: Set up AWS CLI
