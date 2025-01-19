@@ -11,7 +11,7 @@ services:
       - backend-rds
 
   backend-rds:
-    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend_rds:${IMAGE_TAG}
+    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:${IMAGE_TAG}
     container_name: back-rds
     environment:
       - DB_NAME=mydatabase
@@ -26,7 +26,7 @@ services:
       - postgres
 
   backend-redis:
-    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend_redis:${IMAGE_TAG}
+    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:${IMAGE_TAG}
     container_name: back-redis
     environment:
       - REDIS_HOST=redis-cache
