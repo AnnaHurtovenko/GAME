@@ -53,7 +53,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -97,7 +97,7 @@ jobs:
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
             aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com/${{ matrix.service }}
             cd /home/ubuntu/GAME  
-            docker-compose pull ${{ matrix.service }}
+            docker-compose pull ${{ matrix.service }}:${IMAGE_TAG}
             docker-compose up -d ${{ matrix.service }}
             docker image prune -f  # Delete old unnecessary images
           EOF
