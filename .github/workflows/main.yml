@@ -93,6 +93,10 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+      - name: Upload .env file to EC2
+      run: |
+        scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa .env ubuntu@${{ env.EC2_PUBLIC_IP }}:/home/ubuntu/GAME/.env
+
       - name: Connect to EC2 and update containers
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_PUBLIC_IP }} << 'EOF'
@@ -101,6 +105,7 @@ jobs:
             cd /home/ubuntu/GAME  
             docker-compose --env-file /home/ubuntu/GAME/.env pull ${{ matrix.service }}:${IMAGE_TAG}  
             docker-compose --env-file /home/ubuntu/GAME/.env up -d ${{ matrix.service }}
+            docker ps -a
             docker image prune -f  # Delete old unnecessary images
           EOF
 
