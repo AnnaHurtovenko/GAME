@@ -33,9 +33,15 @@ jobs:
       - name: Set IMAGE_TAG and create .env file
         run: |
           IMAGE_TAG="${GITHUB_REF#refs/heads/}-$(git rev-parse --short HEAD)"
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
- 
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV  
+
+          # Update the .env file based on the received IMAGE_TAG
+          if grep -q "IMAGE_TAG=" .env; then
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Замінюємо значення IMAGE_TAG
+          else
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # Якщо IMAGE_TAG не існує, додаємо його
+          fi
+
       - name: Building a Docker image
         run: |
           cd ${{ matrix.service }}
@@ -93,17 +99,24 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-      - name: Upload .env file to EC2
-        run: |
-        scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa .env ubuntu@${{ env.EC2_PUBLIC_IP }}:/home/ubuntu/GAME/.env
-
       - name: Connect to EC2 and update containers
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_PUBLIC_IP }} << 'EOF'
-            export IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+            cd /home/ubuntu/GAME
+            git pull origin main
+           
+            IMAGE_TAG="${{ env.IMAGE_TAG }}"
+            if grep -q "IMAGE_TAG=" .env; then
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Замінюємо значення IMAGE_TAG
+            else
+              echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # Якщо IMAGE_TAG не існує, додаємо його
+            fi
+
+
             aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com/${{ matrix.service }}
             cd /home/ubuntu/GAME  
-            docker-compose --env-file /home/ubuntu/GAME/.env pull ${{ matrix.service }}:${IMAGE_TAG}  
+            docker-compose --env-file /home/ubuntu/GAME/.env pull ${{ matrix.service }}:${IMAGE_TAG}
             docker-compose --env-file /home/ubuntu/GAME/.env up -d ${{ matrix.service }}
             docker ps -a
             docker image prune -f  # Delete old unnecessary images
