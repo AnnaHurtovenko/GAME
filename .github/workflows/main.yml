@@ -97,7 +97,7 @@ jobs:
       - name: Connect to EC2 and update containers
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_PUBLIC_IP }} << 'EOF'
-            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin "${{ secrets.AWS_ECR_URL }}${{ matrix.service }}"
+            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com/${{ matrix.service }}
             cd /home/ubuntu/GAME  
             IMAGE_TAG=${{ env.IMAGE_TAG }} docker-compose pull ${{ matrix.service }}
             IMAGE_TAG=${{ env.IMAGE_TAG }} docker-compose up -d ${{ matrix.service }}
