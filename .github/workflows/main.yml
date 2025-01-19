@@ -9,23 +9,16 @@ on:
       - main
           
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Git pull (ensure latest code is used)
-        run: git pull origin main
-
   build-and-push:
     runs-on: ubuntu-latest
-    needs: setup
     strategy:
       matrix:
         service: [frontend, backend-redis, backend-rds]  
     
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -58,6 +51,9 @@ jobs:
         service: [frontend, backend-redis, backend-rds]
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
