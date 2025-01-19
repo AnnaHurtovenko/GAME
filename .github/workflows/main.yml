@@ -94,7 +94,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       - name: Upload .env file to EC2
-      run: |
+        run: |
         scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa .env ubuntu@${{ env.EC2_PUBLIC_IP }}:/home/ubuntu/GAME/.env
 
       - name: Connect to EC2 and update containers
