@@ -37,9 +37,9 @@ jobs:
 
           # Update the .env file based on the received IMAGE_TAG
           if grep -q "IMAGE_TAG=" .env; then
-            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Замінюємо значення IMAGE_TAG
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Replace the value of IMAGE_TAG
           else
-            echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # Якщо IMAGE_TAG не існує, додаємо його
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # If IMAGE_TAG does not exist, add it
           fi
 
       - name: Building a Docker image
@@ -108,9 +108,9 @@ jobs:
            
             IMAGE_TAG="${{ env.IMAGE_TAG }}"
             if grep -q "IMAGE_TAG=" .env; then
-              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Замінюємо значення IMAGE_TAG
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Replace the value of IMAGE_TAG
             else
-              echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # Якщо IMAGE_TAG не існує, додаємо його
+              echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # If IMAGE_TAG does not exist, add it
             fi
 
 
