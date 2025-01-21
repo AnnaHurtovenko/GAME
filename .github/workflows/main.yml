@@ -7,14 +7,12 @@ on:
   pull_request:
     branches:
       - main
-          
+
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [frontend, backend-redis, backend-rds]  
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -27,36 +25,24 @@ jobs:
           aws-region: 'eu-north-1'
     
       - name: Login to AWS ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
     
-      - name: Set IMAGE_TAG and create .env file
+      - name: Set IMAGE_TAG
         run: |
-          IMAGE_TAG="${GITHUB_REF#refs/heads/}-$(git rev-parse --short HEAD)"
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV  
+          IMAGE_TAG="${GITHUB_REF_NAME}-$(git rev-parse --short HEAD)"
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
 
-          # Update the .env file based on the received IMAGE_TAG
-          if grep -q "IMAGE_TAG=" .env; then
-            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Replace the value of IMAGE_TAG
-          else
-            echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # If IMAGE_TAG does not exist, add it
-          fi
-
-      - name: Building a Docker image
+      - name: Build and Push Docker Images
         run: |
-          cd ${{ matrix.service }}
-          docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/${{ matrix.service }}:$IMAGE_TAG .
-    
-      - name: Pushing a Docker image to ECR
-        run: |
-          docker push 440744228341.dkr.ecr.eu-north-1.amazonaws.com/${{ matrix.service }}:$IMAGE_TAG
+          for SERVICE in frontend backend-redis backend-rds; do
+            echo "Building and pushing $SERVICE"
+            docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:$IMAGE_TAG $SERVICE
+            docker push 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:$IMAGE_TAG
+          done
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-push  
-    strategy:
-      matrix:
-        service: [frontend, backend-redis, backend-rds]
+    needs: build-and-push
 
     steps:
       - name: Checkout repository
@@ -69,15 +55,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'eu-north-1'
 
-      - name: Upgrade files to S3 (frontend only)
-        if: matrix.service == 'frontend'
+      - name: Setup SSH Key
         run: |
-          aws s3 cp ./frontend/index.html s3://demo-bucket-website-2025/index.html 
-
-      - name: CloudFront cache disability (frontend only)
-        if: matrix.service == 'frontend'
-        run: |
-          aws cloudfront create-invalidation --distribution-id E1X3EVCT33LILD --paths "/*"
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
       - name: Debug EC2 Instance ID
         run: echo "EC2_INSTANCE_ID=${{ env.EC2_INSTANCE_ID }}"
@@ -92,33 +74,29 @@ jobs:
             --output text \
             --region eu-north-1)
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
-      
-      - name: Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
 
-      - name: Connect to EC2 and update containers
+
+      - name: Deploy Services to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_PUBLIC_IP }} << 'EOF'
-
+            set -e
             cd /home/ubuntu/GAME
-            git pull origin main
-           
-            IMAGE_TAG="${{ env.IMAGE_TAG }}"
-            if grep -q "IMAGE_TAG=" .env; then
-              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env  # Replace the value of IMAGE_TAG
-            else
-              echo "IMAGE_TAG=${IMAGE_TAG}" >> .env  # If IMAGE_TAG does not exist, add it
+            export IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+            # Ensure yq is installed
+            if ! command -v yq &> /dev/null; then
+              echo "Installing yq"
+              sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+              sudo chmod +x /usr/local/bin/yq
             fi
 
+            echo "Updating docker-compose.yml"
+            yq e '.services.backend_rds.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:"+env.IMAGE_TAG)' -i docker-compose.yml
+            yq e '.services.backend_redis.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:"+env.IMAGE_TAG)' -i docker-compose.yml
+            yq e '.services.frontend.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:"+env.IMAGE_TAG)' -i docker-compose.yml
 
-            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com/${{ matrix.service }}
-            cd /home/ubuntu/GAME  
-            docker-compose --env-file /home/ubuntu/GAME/.env pull ${{ matrix.service }}:${IMAGE_TAG}
-            docker-compose --env-file /home/ubuntu/GAME/.env up -d ${{ matrix.service }}
+            echo "Restarting Docker containers"
+            sudo docker-compose down
+            sudo docker-compose up -d
             docker ps -a
-            docker image prune -f  # Delete old unnecessary images
           EOF
-
