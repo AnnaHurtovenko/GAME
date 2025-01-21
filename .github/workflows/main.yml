@@ -96,13 +96,26 @@ jobs:
               sudo chmod +x /usr/local/bin/yq
             fi
 
+            echo "Current docker-compose.yml before update:"
+            cat docker-compose.yml
+
             echo "Updating docker-compose.yml"
             yq e '.services.backend_rds.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:"+env.IMAGE_TAG)' -i docker-compose.yml
             yq e '.services.backend_redis.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:"+env.IMAGE_TAG)' -i docker-compose.yml
             yq e '.services.frontend.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:"+env.IMAGE_TAG)' -i docker-compose.yml
 
-            echo "Restarting Docker containers"
+            echo "docker-compose.yml after update:"
+            cat docker-compose.yml
+
+            # Confirm IMAGE_TAG value
+            echo "IMAGE_TAG: ${IMAGE_TAG}"
+
+            # Restart Docker containers
+            echo "Stopping and removing containers..."
             sudo docker-compose down
+            
+            echo "Starting containers with updated images..."
             sudo docker-compose up -d
+
             docker ps -a
           EOF
