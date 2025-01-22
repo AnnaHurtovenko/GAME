@@ -52,6 +52,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Login to AWS ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -87,6 +90,12 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_PUBLIC_IP }} << 'EOF'
             set -e
             cd /home/ubuntu/GAME
+
+            echo "Pulling the latest changes from Git..."
+            git fetch origin main
+            git diff --exit-code origin/main || echo "Changes detected, pulling..."
+            git pull origin main
+
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
 
             # Ensure yq is installed
@@ -100,8 +109,8 @@ jobs:
             cat docker-compose.yml
 
             echo "Updating docker-compose.yml"
-            yq e '.services.backend_rds.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:"+env.IMAGE_TAG)' -i docker-compose.yml
-            yq e '.services.backend_redis.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:"+env.IMAGE_TAG)' -i docker-compose.yml
+            yq e '.services.backend-rds.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:"+env.IMAGE_TAG)' -i docker-compose.yml
+            yq e '.services.backend-redis.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:"+env.IMAGE_TAG)' -i docker-compose.yml
             yq e '.services.frontend.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:"+env.IMAGE_TAG)' -i docker-compose.yml
 
             echo "docker-compose.yml after update:"
