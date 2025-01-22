@@ -102,6 +102,10 @@ jobs:
               sudo chmod +x /usr/local/bin/yq
             fi
 
+            # Authenticate Docker to AWS ECR
+            echo "Logging into AWS ECR..."
+            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com
+
             echo "Current docker-compose.yml before update:"
             cat docker-compose.yml
 
