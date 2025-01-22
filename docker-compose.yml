@@ -3,7 +3,7 @@ version: '3.9'
 services:
 
   frontend:
-    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:main-e46c7a7
+    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:latest
     container_name: frontend
     ports:
       - "3000:80"
@@ -11,7 +11,7 @@ services:
       - backend-rds
 
   backend-rds:
-    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:main-e46c7a7
+    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:latest
     container_name: backend-rds
     environment:
       - DB_NAME=mydatabase
@@ -26,7 +26,7 @@ services:
       - postgres
 
   backend-redis:
-    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:main-e46c7a7
+    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:latest
     container_name: backend-redis
     environment:
       - REDIS_HOST=redis-cache

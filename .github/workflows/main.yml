@@ -8,12 +8,9 @@ on:
     branches:
       - main
 
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.set-image-tag.outputs.image_tag }}
 
     steps:
       - name: Checkout repository
@@ -29,19 +26,12 @@ jobs:
       - name: Login to AWS ECR
         uses: aws-actions/amazon-ecr-login@v1
     
-      - name: Set IMAGE_TAG
-        id: set-image-tag
-        run: |
-          IMAGE_TAG="${GITHUB_REF_NAME}-$(git rev-parse --short HEAD)"
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-          echo "::set-output name=image_tag::${IMAGE_TAG}"
-
       - name: Build and Push Docker Images
         run: |
           for SERVICE in frontend backend-redis backend-rds; do
-            echo "Building and pushing $SERVICE"
-            docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:$IMAGE_TAG $SERVICE
-            docker push 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:$IMAGE_TAG
+            echo "Building and pushing $SERVICE with latest tag"
+            docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:latest $SERVICE
+            docker push 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:latest
           done
 
   deploy:
@@ -59,15 +49,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: 'eu-north-1'
 
-      - name: Setup SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-      - name: Debug EC2 Instance ID
-        run: echo "EC2_INSTANCE_ID=${{ env.EC2_INSTANCE_ID }}"
-
       - name: Get EC2 public IP
         id: ec2_ip
         run: |
@@ -79,10 +60,7 @@ jobs:
             --region eu-north-1)
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
 
-
       - name: Deploy Services to EC2
-        env:
-          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_PUBLIC_IP }} << 'EOF'
             set -e
@@ -93,40 +71,13 @@ jobs:
             git diff --exit-code origin/main || echo "Changes detected, pulling..."
             git pull origin main
 
-            export IMAGE_TAG=${{ env.IMAGE_TAG }}
-
-            # Ensure yq is installed
-            if ! command -v yq &> /dev/null; then
-              echo "Installing yq"
-              sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-              sudo chmod +x /usr/local/bin/yq
-            fi
-
             # Authenticate Docker to AWS ECR
             echo "Logging into AWS ECR..."
             aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com
 
-            echo "Current docker-compose.yml before update:"
-            cat docker-compose.yml
-
-            echo "IMAGE_TAG: ${IMAGE_TAG}"
-
-            echo "Updating docker-compose.yml"
-            yq e '.services.backend-rds.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:"+env.IMAGE_TAG)' -i docker-compose.yml
-            yq e '.services.backend-redis.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:"+env.IMAGE_TAG)' -i docker-compose.yml
-            yq e '.services.frontend.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:"+env.IMAGE_TAG)' -i docker-compose.yml
-
-            echo "docker-compose.yml after update:"
-            cat docker-compose.yml
-
-            # Confirm IMAGE_TAG value
-            echo "IMAGE_TAG: ${IMAGE_TAG}"
-
-            # Restart Docker containers
-            echo "Stopping and removing containers..."
+            # Pull latest images and restart containers
+            sudo docker-compose pull
             sudo docker-compose down
-            
-            echo "Starting containers with updated images..."
             sudo docker-compose up -d
 
             docker ps -a
