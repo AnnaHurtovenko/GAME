@@ -66,6 +66,8 @@ jobs:
             --region eu-north-1)
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
 
+      
+
       - name: Deploy Services to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ env.EC2_PUBLIC_IP }} << 'EOF'
@@ -81,8 +83,11 @@ jobs:
             echo "Logging into AWS ECR..."
             aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com
 
-            # Pull latest images and restart containers
+            # Ensure latest images are pulled and restart services
+            echo "Pulling the latest Docker images..."
             sudo docker-compose pull
+
+            echo "Restarting Docker containers..."
             sudo docker-compose down
             sudo docker-compose up -d
 
