@@ -109,6 +109,8 @@ jobs:
             echo "Current docker-compose.yml before update:"
             cat docker-compose.yml
 
+            echo "IMAGE_TAG: ${IMAGE_TAG}"
+
             echo "Updating docker-compose.yml"
             yq e '.services.backend-rds.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:"+env.IMAGE_TAG)' -i docker-compose.yml
             yq e '.services.backend-redis.image = strenv("440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:"+env.IMAGE_TAG)' -i docker-compose.yml
