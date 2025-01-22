@@ -76,6 +76,7 @@ jobs:
 
             echo "Pulling the latest changes from Git..."
             git fetch origin main
+            git config pull.rebase false  
             git diff --exit-code origin/main || echo "Changes detected, pulling..."
             git pull origin main
 
