@@ -36,10 +36,10 @@ jobs:
     
       - name: Build and Push Docker Images
         run: |
-          docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:latest backend-redis
+          docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:latest backend_redis
           docker push 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-redis:latest
 
-          docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:latest backend-rds
+          docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:latest backend_rds
           docker push 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:latest
 
   deploy:
