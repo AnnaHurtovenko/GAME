@@ -70,10 +70,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
-      - name: Debug EC2 Instance ID
-        run: echo "EC2_INSTANCE_ID=${{ env.EC2_INSTANCE_ID }}"
-
+    
       - name: Get EC2 public IP
         id: ec2_ip
         run: |
@@ -85,8 +82,9 @@ jobs:
             --region eu-north-1)
           echo "EC2_PUBLIC_IP=$EC2_PUBLIC_IP" >> $GITHUB_ENV
 
+      - name: Show EC2 Public IP
+        run: echo "EC2_PUBLIC_IP=${{ env.EC2_PUBLIC_IP }}"
       
-
       - name: Deploy Services to EC2
         run: |
           echo "Testing SSH connection to EC2..."
