@@ -28,7 +28,7 @@ jobs:
     
       - name: Build and Push Docker Images
         run: |
-          for SERVICE in frontend backend-redis backend-rds; do
+          for SERVICE in backend-redis backend-rds; do
             echo "Building and pushing $SERVICE with latest tag"
             docker build -t 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:latest $SERVICE
             docker push 440744228341.dkr.ecr.eu-north-1.amazonaws.com/$SERVICE:latest
@@ -61,7 +61,6 @@ jobs:
       - name: Check ECR Images
         run: |
           echo "Checking ECR repositories and images..."
-          aws ecr list-images --repository-name frontend --region eu-north-1
           aws ecr list-images --repository-name backend-redis --region eu-north-1
           aws ecr list-images --repository-name backend-rds --region eu-north-1
       
@@ -101,10 +100,6 @@ jobs:
             # Authenticate Docker to AWS ECR
             echo "Logging into AWS ECR..."
             aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 440744228341.dkr.ecr.eu-north-1.amazonaws.com
-
-            # Ensure latest images are pulled and restart services
-            echo "Pulling the latest Docker images..."
-            docker pull 440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:latest
             
             sudo docker-compose pull
 

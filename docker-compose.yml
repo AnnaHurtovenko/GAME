@@ -2,14 +2,6 @@ version: '3.9'
 
 services:
 
-  frontend:
-    image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/frontend:latest
-    container_name: frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend-rds
-
   backend-rds:
     image: 440744228341.dkr.ecr.eu-north-1.amazonaws.com/backend-rds:latest
     container_name: backend-rds
